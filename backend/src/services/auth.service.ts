@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { env, list } from '../config/env';
-import { admin, anon } from '../lib/supabase';
+import { admin } from '../lib/supabase';
 import { AppError, badRequest, conflict, unauthorized, unavailable } from '../lib/errors';
 import { profilesRepo } from '../repositories/profiles.repo';
 import { getSubmissionProvider } from '../providers/registry';
@@ -44,13 +44,19 @@ export const authService = {
     if (env.REQUIRE_LEETCODE_VALIDATION && !(await leetcodeUserExists(input.leetcode_username)))
       throw badRequest('LeetCode user not found. Check the username (it is case-sensitive in the profile URL).');
 
-    // Supabase Auth owns the password (hashing, email verification, reset). We never see or store it again.
-    const { data, error } = await anon.auth.signUp({
+    // Create confirmed users server-side so registration does not send a confirmation email.
+    // Supabase Auth still owns password hashing, sign-in, and password reset.
+    const { data, error } = await admin.auth.admin.createUser({
       email: input.email,
       password: input.password,
-      options: { data: { full_name: input.full_name }, emailRedirectTo: `${env.PUBLIC_APP_URL}/login` },
+      email_confirm: true,
+      user_metadata: { full_name: input.full_name },
     });
-    if (error) throw badRequest(error.message);
+    if (error) {
+      if (/rate limit/i.test(error.message) || error.status === 429)
+        throw new AppError(429, 'EMAIL_RATE_LIMIT', 'Too many sign-up emails are being sent right now. Please try again in a few minutes.');
+      throw badRequest(error.message);
+    }
     const user = data.user;
     if (!user) throw new AppError(500, 'SIGNUP_FAILED', 'Sign-up did not return a user');
 
@@ -61,7 +67,7 @@ export const authService = {
         leetcode_username: input.leetcode_username, level: input.level as Profile['level'],
         role: bootstrap ? 'ADMIN' : 'STUDENT',
       });
-      return { profile, emailConfirmationRequired: !data.session };
+      return { profile, emailConfirmationRequired: false };
     } catch (e) {
       // Compensate so a half-created account never blocks the user from retrying.
       await admin.auth.admin.deleteUser(user.id).catch((err) => logger.error({ err }, 'rollback of auth user failed'));
