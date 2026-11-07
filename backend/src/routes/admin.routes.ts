@@ -16,6 +16,8 @@ import { progressService } from '../services/progress.service';
 import { badRequest, conflict, notFound } from '../lib/errors';
 import { logger } from '../lib/logger';
 import { LEETCODE_USERNAME, leetcodeUserExists } from '../services/auth.service';
+import { admin } from '../lib/supabase';
+import { announcementSchema, notificationsService, pushEnabled } from '../services/notifications.service';
 
 export const adminRoutes = Router();
 adminRoutes.use(authenticate, requireAdmin);
@@ -106,6 +108,18 @@ adminRoutes.patch('/users/:userId', asyncHandler(async (req, res) => {
   if (!Object.keys(patch).length) throw badRequest('Nothing to update');
   res.json({ profile: await profilesRepo.update(userId, patch as Parameters<typeof profilesRepo.update>[1]) });
 }));
+adminRoutes.delete('/users/:userId', asyncHandler(async (req, res) => {
+  const userId = id(req.params.userId);
+  if (userId === req.user!.id) throw badRequest('You cannot delete your own account');
+  const profile = await profilesRepo.get(userId);
+  if (!profile) throw notFound('User not found');
+  if (profile.role === 'ADMIN') throw conflict('Admin accounts cannot be deleted here', 'ADMIN_ACCOUNT');
+  const { error: certificatesError } = await admin.from('certificates').delete().eq('user_id', userId);
+  if (certificatesError) throw certificatesError;
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) throw error;
+  res.status(204).end();
+}));
 adminRoutes.post('/programs/:programId/participants/:userId', asyncHandler(async (req, res) => {
   const programId = id(req.params.programId); const userId = id(req.params.userId);
   await programService.require(programId);
@@ -174,6 +188,19 @@ adminRoutes.get('/programs/:programId/analytics', asyncHandler(async (req, res) 
 adminRoutes.get('/admins', asyncHandler(async (_req, res) => {
   res.json({ admins: (await profilesRepo.listAdmins()).map((a) => ({ id: a.id, full_name: a.full_name, email: a.email })) });
 }));
+// ───── announcements / push ─────
+adminRoutes.get('/announcements', asyncHandler(async (req, res) => {
+  const { limit, offset } = pageParams(req, 100);
+  res.json({ announcements: await notificationsService.list(limit, offset), push_configured: pushEnabled });
+}));
+adminRoutes.post('/announcements', asyncHandler(async (req, res) => {
+  res.status(201).json(await notificationsService.create(parse(announcementSchema, req.body), req.user!.id));
+}));
+adminRoutes.delete('/announcements/:id', asyncHandler(async (req, res) => {
+  await notificationsService.remove(id(req.params.id));
+  res.status(204).end();
+}));
+
 adminRoutes.put('/users/:userId/role', asyncHandler(async (req, res) => {
   const { role } = parse(z.object({ role: z.enum(['STUDENT', 'ADMIN']) }), req.body);
   const userId = id(req.params.userId);

@@ -22,6 +22,7 @@ import type { Profile } from '../src/types/db';
 
 const PASSWORD = process.env.SEED_PASSWORD ?? 'CodeCrafter#2026';
 const TZ = 'Asia/Kolkata';
+const LAUNCH_DATE = '2026-10-10';
 
 const DSA: Array<[string, string, string, 'Easy' | 'Medium' | 'Hard']> = [
   ['Two Sum', 'two-sum', 'Arrays', 'Easy'], ['Valid Parentheses', 'valid-parentheses', 'Stack', 'Easy'],
@@ -80,7 +81,7 @@ async function main() {
     ['meera@students.test', 'Meera Iyer', 'demo_meera', 'FOUNDATION'], ['vikram@students.test', 'Vikram Patel', 'demo_vikram', 'DEGREE'],
   ].map(([e, n, lc, lv]) => upsertUser(e, n, lc, lv as Profile['level'], 'STUDENT')));
 
-  const today = DateTime.now().setZone(TZ).startOf('day');
+  const today = DateTime.fromISO(LAUNCH_DATE, { zone: TZ }).startOf('day');
 
   // ── program 1: active
   let dsa = await programsRepo.getBySlug('30-days-of-dsa');
@@ -90,9 +91,9 @@ async function main() {
       start_date: today.minus({ days: 5 }).toISODate()!, duration_days: 30, status: 'ACTIVE', enrollment_open: true, timezone: TZ,
       challenge_window_hours: 24, streak_policy: 'GRACE_DAYS', streak_grace_days: 1, certificate_enabled: true, certificate_prefix: 'DSA',
     } as never, adminUser.id);
-    await programsRepo.upsertRules({ program_id: dsa.id, min_challenges: 27, min_completion_pct: 90, min_points: null, max_missed_days: 3 });
     await seedChallenges(dsa.id, DSA, dsa.start_date);
   }
+  await programsRepo.upsertRules({ program_id: dsa.id, min_challenges: 28, min_completion_pct: 93, min_points: null, max_missed_days: 2 });
   for (const s of students) await participantsRepo.enroll(dsa.id, s.id);
 
   // ── simulated verified solves: [student index, days solved]

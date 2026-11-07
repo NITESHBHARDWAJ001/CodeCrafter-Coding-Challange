@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import type { Program, ProgramProgress, StudentChallenge } from '../lib/types';
 import { fmtNum } from '../lib/format';
 import { Button, Card, CardHeader, EmptyState, ErrorState, PageSkeleton, ProgramStatusBadge, ProgressBar, Select, Stat, Streak } from '../components/ui';
-import { LeaderboardPanel, TodayCard, Timeline } from '../components/Domain';
+import { AnnouncementsFeed, LeaderboardPanel, NotificationPrompt, TodayCard, Timeline } from '../components/Domain';
 
 interface Dash { programs: Array<{ program: Program; progress: ProgramProgress; today: StudentChallenge | null }> }
 
@@ -30,6 +30,9 @@ export default function Dashboard() {
         </div>
         {items.length > 1 && <div className="w-64"><Select aria-label="Program" value={cur.program.id} onChange={(e) => setSel(e.target.value)}>{items.map((i) => <option key={i.program.id} value={i.program.id}>{i.program.name}</option>)}</Select></div>}
       </div>
+
+      <NotificationPrompt />
+      <AnnouncementsFeed />
 
       {!cur ? (
         <Card><EmptyState icon="🚀" title="You're not in a program yet" body="Join a program to start receiving daily challenges and climb the leaderboard." action={<Link to="/programs"><Button variant="accent">Browse programs</Button></Link>} /></Card>

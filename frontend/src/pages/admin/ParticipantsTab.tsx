@@ -83,6 +83,11 @@ function StudentModal({ userId, onClose }: { userId: string; onClose: () => void
 
   const save = useMutation({ mutationFn: () => api.patch(`/admin/users/${userId}`, f), onSuccess: () => { toast('Student updated'); refresh(); }, onError: fail });
   const role = useMutation({ mutationFn: (r: 'STUDENT' | 'ADMIN') => api.put(`/admin/users/${userId}/role`, { role: r }), onSuccess: () => { toast('Role updated'); refresh(); }, onError: fail });
+  const removeAccount = useMutation({
+    mutationFn: () => api.del(`/admin/users/${userId}`),
+    onSuccess: () => { toast('Student account deleted'); qc.invalidateQueries({ queryKey: ['admin-overview'] }); qc.invalidateQueries({ queryKey: ['admin-participants'] }); onClose(); },
+    onError: fail,
+  });
   const enroll = useMutation({ mutationFn: () => api.post(`/admin/programs/${enrollId}/participants/${userId}`), onSuccess: () => { toast('Enrolled'); setEnrollId(''); refresh(); }, onError: fail });
   const remove = useMutation({ mutationFn: (pid: string) => api.del(`/admin/programs/${pid}/participants/${userId}`), onSuccess: () => { toast('Removed from program (verified solves are kept)'); refresh(); }, onError: fail });
 
@@ -124,9 +129,12 @@ function StudentModal({ userId, onClose }: { userId: string; onClose: () => void
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-4">
               <div className="text-sm text-ink-600">Admin access lets this person manage programs, challenges, certificates and sync.</div>
-              {p.id === me?.id ? <Badge>This is you</Badge>
-                : p.role === 'ADMIN' ? <Button variant="danger" size="sm" loading={role.isPending} onClick={() => confirm(`Remove admin rights from ${p.full_name}?`) && role.mutate('STUDENT')}>Remove admin</Button>
-                : <Button variant="secondary" size="sm" loading={role.isPending} onClick={() => confirm(`Make ${p.full_name} an admin?`) && role.mutate('ADMIN')}>Make admin</Button>}
+              <div className="flex flex-wrap items-center gap-2">
+                {p.id === me?.id ? <Badge>This is you</Badge>
+                  : p.role === 'ADMIN' ? <Button variant="danger" size="sm" loading={role.isPending} onClick={() => confirm(`Remove admin rights from ${p.full_name}?`) && role.mutate('STUDENT')}>Remove admin</Button>
+                  : <Button variant="secondary" size="sm" loading={role.isPending} onClick={() => confirm(`Make ${p.full_name} an admin?`) && role.mutate('ADMIN')}>Make admin</Button>}
+                {p.id !== me?.id && p.role !== 'ADMIN' && <Button variant="danger" size="sm" loading={removeAccount.isPending} onClick={() => confirm(`Permanently delete ${p.full_name}'s account? This removes their participation, progress, submissions and certificates.`) && removeAccount.mutate()}>Delete account</Button>}
+              </div>
             </div>
           </div>);
       })()}

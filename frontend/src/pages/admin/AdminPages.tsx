@@ -13,6 +13,7 @@ import { CertificatesTab } from './CertificatesTab';
 import { SyncPanel } from './SyncPanel';
 import { AnalyticsTab } from './AnalyticsTab';
 import { ProgramForm } from './ProgramForm';
+import { AnnouncementsTab } from './AnnouncementsTab';
 
 /* ───────── Dashboard ───────── */
 interface Overview {
@@ -119,6 +120,7 @@ export const AdminLeaderboardsPage = () => <Scoped title="Leaderboards" render={
 export const AdminCertificatesPage = () => <Scoped title="Certificates" render={(id) => <CertificatesTab programId={id} />} />;
 export const AdminAnalyticsPage = () => <Scoped title="Analytics" render={(id) => <AnalyticsTab programId={id} />} />;
 export const AdminSyncPage = () => (<div className="space-y-5"><h1 className="text-3xl font-bold">Sync</h1><SyncPanel /></div>);
+export const AdminAnnouncementsPage = () => (<div className="space-y-5"><h1 className="text-3xl font-bold">Announcements</h1><AnnouncementsTab /></div>);
 export const AdminParticipantsPage = () => (<div className="space-y-5"><h1 className="text-3xl font-bold">Students</h1><ParticipantsTab /></div>);
 
 /* ───────── Settings ───────── */

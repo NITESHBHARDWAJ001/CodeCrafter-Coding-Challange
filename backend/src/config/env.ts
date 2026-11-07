@@ -20,6 +20,11 @@ const schema = z.object({
   ENABLE_SCHEDULER: bool.default('true'),
   REQUIRE_LEETCODE_VALIDATION: bool.default('true'),
 
+  // Web Push (VAPID). Optional: when either key is empty the feature stays disabled, nothing else changes.
+  VAPID_PUBLIC_KEY: z.string().default(''),
+  VAPID_PRIVATE_KEY: z.string().default(''),
+  VAPID_SUBJECT: z.string().default('mailto:admin@codecrafter.club'),
+
   LEETCODE_GRAPHQL_URL: z.string().url().default('https://leetcode.com/graphql'),
   LEETCODE_TIMEOUT_MS: z.coerce.number().default(10_000),
   LEETCODE_MAX_RETRIES: z.coerce.number().default(3),

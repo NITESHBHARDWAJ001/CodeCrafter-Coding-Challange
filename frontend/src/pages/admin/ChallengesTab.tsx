@@ -62,6 +62,7 @@ export function ChallengesTab({ programId }: { programId: string }) {
 
 function ChallengeForm({ programId, challenge, nextDay, onClose, onSaved }: { programId: string; challenge: AdminChallenge | null; nextDay: number; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
+  const [scheduleState, setScheduleState] = useState(challenge?.state === 'ACTIVE' || challenge?.state === 'COMPLETED' ? challenge.state : 'UPCOMING');
   const [f, setF] = useState({
     day_number: String(challenge?.day_number ?? nextDay), title: challenge?.title ?? '', leetcode_url: challenge?.external_problem_url ?? '',
     category: challenge?.category ?? '', difficulty: (challenge?.difficulty ?? 'EASY') as Difficulty,
@@ -70,6 +71,12 @@ function ChallengeForm({ programId, challenge, nextDay, onClose, onSaved }: { pr
   });
   const [errs, setErrs] = useState<string[]>([]);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const chooseScheduleState = (state: string) => {
+    const today = new Date();
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (state === 'UPCOMING' ? 1 : state === 'COMPLETED' ? -1 : 0));
+    setScheduleState(state as 'UPCOMING' | 'ACTIVE' | 'COMPLETED');
+    setF((s) => ({ ...s, release_date: date.toISOString().slice(0, 10), release_time: state === 'ACTIVE' ? '00:00' : s.release_time }));
+  };
   const save = useMutation({
     mutationFn: () => challenge ? api.put(`/admin/challenges/${challenge.id}`, f) : api.post(`/admin/programs/${programId}/challenges`, f),
     onSuccess: () => { toast('Saved'); onSaved(); },
@@ -89,6 +96,11 @@ function ChallengeForm({ programId, challenge, nextDay, onClose, onSaved }: { pr
         <Field label="Points" hint="Leave empty to use the program's default for this difficulty."><Input type="number" min={0} value={f.points} onChange={set('points')} /></Field>
         <Field label="Release date"><Input type="date" required value={f.release_date} onChange={set('release_date')} /></Field>
         <Field label="Release time (program timezone)"><Input type="time" required value={f.release_time} onChange={set('release_time')} /></Field>
+        <Field label="Schedule state" hint="This sets the release date; the server derives the final state from the program calendar.">
+          <Select value={scheduleState} onChange={(e) => chooseScheduleState(e.target.value)}>
+            <option value="UPCOMING">Upcoming</option><option value="ACTIVE">Active today</option><option value="COMPLETED">Completed</option>
+          </Select>
+        </Field>
         {errs.length > 0 && <ul className="rounded-xl bg-bad-bg p-3 text-sm font-medium text-bad sm:col-span-2" role="alert">{errs.map((m, i) => <li key={i}>{m}</li>)}</ul>}
         <div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="ghost" onClick={onClose}>Cancel</Button><Button type="submit" loading={save.isPending}>Save challenge</Button></div>
       </form>

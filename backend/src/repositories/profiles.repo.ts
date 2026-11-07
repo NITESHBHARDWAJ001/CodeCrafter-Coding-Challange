@@ -24,6 +24,9 @@ export const profilesRepo = {
   async setRole(id: string, role: UserRole): Promise<Profile> {
     return unwrap(await admin.from('profiles').update({ role }).eq('id', id).select('*').single<Profile>());
   },
+  async remove(id: string): Promise<void> {
+    unwrap(await admin.from('profiles').delete().eq('id', id).select('id'));
+  },
   async listAdmins(): Promise<Profile[]> {
     return unwrap(await admin.from('profiles').select('*').eq('role', 'ADMIN').order('full_name').returns<Profile[]>());
   },

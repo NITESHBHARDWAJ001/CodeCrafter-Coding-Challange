@@ -12,6 +12,8 @@ import { participantsRepo } from '../repositories/participants.repo';
 import { progressRepo } from '../repositories/submissions.repo';
 import { leaderboardRepo } from '../repositories/leaderboard.repo';
 import { challengesRepo } from '../repositories/challenges.repo';
+import { subscribeSchema, notificationsService, pushEnabled } from '../services/notifications.service';
+import { env } from '../config/env';
 
 export const studentRoutes = Router();
 studentRoutes.use(authenticate);
@@ -45,6 +47,24 @@ studentRoutes.get('/me/certificates/:certId/download', asyncHandler(async (req, 
 /** "Check me now": same server-side verification, only for the caller; the client cannot submit a result. */
 studentRoutes.post('/me/programs/:programId/verify', asyncHandler(async (req, res) => {
   res.json(await syncService.verifySelf(req.user!.id, req.user!.leetcode_username, id(req.params.programId)));
+}));
+
+// ───── announcements / push ─────
+studentRoutes.get('/announcements', asyncHandler(async (req, res) => {
+  const { limit, offset } = pageParams(req, 50);
+  res.json({ announcements: await notificationsService.list(limit, offset) });
+}));
+studentRoutes.get('/push/vapid-public-key', asyncHandler(async (_req, res) => {
+  res.json({ key: pushEnabled ? env.VAPID_PUBLIC_KEY : null });
+}));
+studentRoutes.post('/push/subscribe', asyncHandler(async (req, res) => {
+  await notificationsService.subscribe(req.user!.id, parse(subscribeSchema, req.body), req.headers['user-agent']);
+  res.status(204).end();
+}));
+studentRoutes.delete('/push/subscribe', asyncHandler(async (req, res) => {
+  const { endpoint } = parse(z.object({ endpoint: z.string().url() }), req.body);
+  await notificationsService.unsubscribe(req.user!.id, endpoint);
+  res.status(204).end();
 }));
 
 // ───── programs ─────

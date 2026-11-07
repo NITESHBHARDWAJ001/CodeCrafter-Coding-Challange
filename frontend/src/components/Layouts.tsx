@@ -49,7 +49,8 @@ export function StudentLayout() {
 const ADMIN_NAV: Array<[string, string, string]> = [
   ['/admin', 'Dashboard', '▦'], ['/admin/programs', 'Programs', '🗂'], ['/admin/challenges', 'Challenges', '🧩'],
   ['/admin/participants', 'Students', '👥'], ['/admin/leaderboards', 'Leaderboards', '🏆'], ['/admin/sync', 'Sync', '🔄'],
-  ['/admin/certificates', 'Certificates', '🎓'], ['/admin/analytics', 'Analytics', '📈'], ['/admin/settings', 'Settings', '⚙'],
+  ['/admin/certificates', 'Certificates', '🎓'], ['/admin/analytics', 'Analytics', '📈'], ['/admin/announcements', 'Announcements', '📣'],
+  ['/admin/settings', 'Settings', '⚙'],
 ];
 
 export function AdminLayout() {

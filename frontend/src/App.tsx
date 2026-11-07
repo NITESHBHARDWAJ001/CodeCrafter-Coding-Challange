@@ -8,7 +8,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/Profile';
 import { VerifyPage } from './pages/Verify';
 import {
-  AdminAnalyticsPage, AdminCertificatesPage, AdminChallengesPage, AdminDashboard, AdminLeaderboardsPage, AdminParticipantsPage,
+  AdminAnalyticsPage, AdminAnnouncementsPage, AdminCertificatesPage, AdminChallengesPage, AdminDashboard, AdminLeaderboardsPage, AdminParticipantsPage,
   AdminProgramPage, AdminPrograms, AdminSettingsPage, AdminSyncPage,
 } from './pages/admin/AdminPages';
 
@@ -44,6 +44,7 @@ export default function App() {
             <Route path="sync" element={<AdminSyncPage />} />
             <Route path="certificates" element={<AdminCertificatesPage />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
+            <Route path="announcements" element={<AdminAnnouncementsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
         </Route>

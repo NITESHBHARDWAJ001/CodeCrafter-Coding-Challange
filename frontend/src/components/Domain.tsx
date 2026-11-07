@@ -1,9 +1,10 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, errorMessage } from '../lib/api';
 import { useAuth } from '../auth/AuthContext';
-import type { BoardResult, Program, StudentChallenge } from '../lib/types';
-import { DIFF_LABEL, fmtDay, fmtNum, fmtTime, LEVEL_LABEL } from '../lib/format';
+import type { Announcement, BoardResult, Program, StudentChallenge } from '../lib/types';
+import { DIFF_LABEL, fmtDateTime, fmtDay, fmtNum, fmtTime, LEVEL_LABEL } from '../lib/format';
+import { currentSubscription, enablePush } from '../lib/push';
 import { Badge, Button, Card, CardHeader, DifficultyBadge, EmptyState, ErrorState, Select, Skeleton, Streak, Tabs, cx, useToast } from './ui';
 
 /* ───────── Leaderboard ───────── */
@@ -173,6 +174,49 @@ export function ProgramPicker({ value, onChange, children }: { value: string | n
       </Select></div>
       {children(current.id, current)}
     </div>
+  );
+}
+
+/* ───────── Push notification opt-in + announcements feed ───────── */
+export function NotificationPrompt() {
+  const toast = useToast();
+  const [status, setStatus] = useState<'checking' | 'subscribed' | 'prompt'>('checking');
+  useEffect(() => { currentSubscription().then((sub) => setStatus(sub ? 'subscribed' : 'prompt')).catch(() => setStatus('prompt')); }, []);
+
+  if (status !== 'prompt') return null;
+  return (
+    <Card className="flex flex-wrap items-center justify-between gap-3 border-saffron-500/40 bg-saffron-100/40 p-4">
+      <div>
+        <div className="font-semibold">🔔 Get notified about new challenges</div>
+        <p className="text-sm text-ink-600">Turn on browser notifications so you never miss a day.</p>
+      </div>
+      <Button variant="accent" size="sm" onClick={async () => {
+        const r = await enablePush();
+        if (r === 'subscribed') { toast('Notifications enabled'); setStatus('subscribed'); }
+        else if (r === 'denied') toast('Notifications are blocked in your browser settings', 'bad');
+        else if (r === 'unsupported') toast("Your browser doesn't support push notifications", 'bad');
+        else toast("Notifications aren't set up on the server yet", 'bad');
+      }}>Enable</Button>
+    </Card>
+  );
+}
+
+export function AnnouncementsFeed() {
+  const q = useQuery({ queryKey: ['announcements'], queryFn: () => api.get<{ announcements: Announcement[] }>('/announcements?limit=5'), refetchInterval: 60_000 });
+  if (q.isLoading || q.error || !q.data?.announcements.length) return null;
+  return (
+    <Card>
+      <CardHeader title="Announcements" />
+      <ul className="divide-y divide-ink-100">
+        {q.data.announcements.map((a) => (
+          <li key={a.id} className="px-5 py-3">
+            <div className="font-semibold">{a.title}</div>
+            <p className="text-sm text-ink-600">{a.body}</p>
+            <div className="mt-1 text-xs text-ink-400">{fmtDateTime(a.created_at)}</div>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 

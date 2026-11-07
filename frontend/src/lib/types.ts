@@ -46,3 +46,7 @@ export interface Certificate {
   challenges_completed: number; total_challenges: number; issued_at: string;
 }
 export interface Rules { min_challenges: number | null; min_completion_pct: number | null; min_points: number | null; max_missed_days: number | null }
+export interface Announcement {
+  id: string; title: string; body: string; audience: 'ALL' | 'PROGRAM' | 'STUDENT'; program_id: string | null; user_id: string | null; url: string | null;
+  sent_count: number; failed_count: number; created_at: string;
+}

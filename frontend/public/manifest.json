@@ -1,0 +1,9 @@
+{
+  "name": "CodeCrafter Club",
+  "short_name": "CodeCrafter",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1b3d",
+  "theme_color": "#0f1b3d",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
