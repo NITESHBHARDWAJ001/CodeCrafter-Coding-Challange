@@ -3,6 +3,9 @@ import { z } from 'zod';
 
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
 
+/** Safety net if a production deploy forgets to set PUBLIC_APP_URL: never ship a localhost link. */
+const PROD_APP_URL = 'https://code-crafter-coding-challange.vercel.app';
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(4000),
@@ -42,7 +45,11 @@ function load(): Env {
     const msg = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n  ');
     throw new Error(`Invalid environment configuration:\n  ${msg}`);
   }
-  return parsed.data;
+  const data = parsed.data;
+  if (data.NODE_ENV === 'production' && data.PUBLIC_APP_URL.includes('localhost')) {
+    data.PUBLIC_APP_URL = PROD_APP_URL;
+  }
+  return data;
 }
 
 export const env: Env = load();
